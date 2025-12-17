@@ -1,0 +1,8 @@
+/whisper-large-v3-ct2
+/whisper-small
+/whisper-tiny
+
+.venv
+.idea
+
+.env
