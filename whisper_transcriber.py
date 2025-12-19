@@ -5,8 +5,7 @@ from faster_whisper import WhisperModel
 import numpy as np
 import re
 
-from scipy.signal import ellip
-
+from vad import SileroVAD
 from config import *
 
 wake_re = re.compile(WAKE_WORD_REGEX, re.IGNORECASE)
@@ -17,7 +16,6 @@ hallucination_phrases_score = [
     ('коррект', 3)
 ]
 
-
 @dataclass
 class ListenResult:
     state: str
@@ -26,7 +24,7 @@ class ListenResult:
 
 
 class LocalWhisper:
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, vad: SileroVAD):
         self.realtime_buffer = deque(maxlen=WINDOW)
         self.record_buffer = deque(maxlen=LARGE_AUDIO_BUFFER_SIZE)
 
@@ -44,6 +42,7 @@ class LocalWhisper:
             device="cuda",
             compute_type="float16"
         )
+        self.vad = vad
 
     def on_audio_available(self, audio_data):
         self.realtime_buffer.extend(audio_data)
@@ -53,13 +52,18 @@ class LocalWhisper:
 
     def process(self) -> ListenResult:
         sleep(0.01)
+
+        if self.vad.check_voice_activity():
+            self.last_speech_time = current_time()
+
         if self._is_time_to_recognize():
             self.last_transcription_time = current_time()
             audio_chunk = np.array(self.realtime_buffer, dtype=np.float32)
             self.last_recognized = self._transcribe(audio_chunk)
 
         if self.state == "IDLE":
-            if re.search(wake_re, self.last_recognized):
+            test = re.search(wake_re, self.last_recognized)
+            if test:
                 self._start_recording()
 
         elif self.state == "RECORDING":
@@ -67,7 +71,12 @@ class LocalWhisper:
                 self.last_speech_time = current_time()
 
             if current_time() - self.recording_start_time > COMMAND_TIMEOUT:
-                # or current_time() - self.last_speech_time > SILENCE_TIMEOUT:
+                print("Out by timeout")
+                self._stop_recording()
+                return ListenResult(state=self.state, recorded=np.array(self.record_buffer, dtype=np.float32),
+                                    last_recognized=self.last_recognized)
+            if current_time() - self.last_speech_time > SILENCE_TIMEOUT:
+                print('Out by silence')
                 self._stop_recording()
                 return ListenResult(state=self.state, recorded=np.array(self.record_buffer, dtype=np.float32),
                                     last_recognized=self.last_recognized)
@@ -86,6 +95,7 @@ class LocalWhisper:
     def _stop_recording(self):
         self.state = "IDLE"
         self.is_recording = False
+        self.last_recognized = ''
         self.realtime_buffer.clear()
 
     def _is_time_to_recognize(self):

@@ -10,3 +10,4 @@ scipy~=1.16.3
 transformers~=4.57.3
 torch~=2.5.1+cu121
 sympy~=1.13.1
+silero-vad

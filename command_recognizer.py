@@ -11,10 +11,14 @@ class CommandRecognizer:
         )
 
     def recognize_command(self):
-        transcribed_segments, _ = self.model.transcribe(
+        segments, _ = self.model.transcribe(
             "audio.wav",
+            language="ru",
             vad_filter=True,
             no_speech_threshold=SPEECH_RECOGNITION_THRESHOLD
         )
 
-        return transcribed_segments
+        transcribed = ' '.join(map(lambda x: x.text, segments))
+
+        print(transcribed)
+        # return transcribed_segments
