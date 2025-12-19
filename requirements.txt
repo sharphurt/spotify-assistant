@@ -6,3 +6,7 @@ setuptools
 webrtcvad~=2.0.10
 numpy~=2.3.5
 faster-whisper~=1.2.1
+scipy~=1.16.3
+transformers~=4.57.3
+torch~=2.5.1+cu121
+sympy~=1.13.1

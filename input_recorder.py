@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from queue import Queue
 
 import numpy as np
 import sounddevice as sd
@@ -16,7 +15,6 @@ class InputRecorder:
 
         audio_data = np.frombuffer(indata, dtype=np.int16).astype(np.float32)
         audio_data /= 32768.0
-        # audio_data *= 2.0
 
         for subscriber in self._subscribers:
             subscriber(audio_data)
