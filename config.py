@@ -1,10 +1,14 @@
+import re
+
 # Параметры рекордера
 SAMPLE_RATE = 16000  # Количество бит на 1 секунду
 BLOCK_SIZE = 1024
 DEVICE = "Микрофон (5- fifine Microphone), MME"
 
 # Параметры транскрибера
-WAKE_WORD_REGEX = "леха|лёха|алеха|алёха|лоха|лех|лёх|йохан"
+WAKE_RE = re.compile("леха|лёха|алеха|алёха|лоха|лех|лёх|йохан", re.IGNORECASE)
+PUNCTUATION_RE = re.compile(r'[^\w\s]', re.IGNORECASE)
+WHITESPACES_RE = re.compile(r'\s+', re.IGNORECASE)
 
 SILENCE_TIMEOUT = 1.5
 COMMAND_TIMEOUT = 7

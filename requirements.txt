@@ -17,3 +17,4 @@ openai~=2.13.0
 beautifulsoup4~=4.14.3
 ddgs~=9.10.0
 groq~=1.0.0
+pydantic~=2.12.5

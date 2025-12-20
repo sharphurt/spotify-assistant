@@ -1,24 +1,15 @@
 import logging
-from dataclasses import dataclass
 from time import time as current_time, sleep
 from collections import deque
 import numpy as np
-import re
 
+from dto.realtime_monitor import MonitorInfo
 from stt.stt_recognizer import STTRecognizer
 from stt.vad import SileroVAD
 
 from config import *
 
 logger = logging.getLogger(__name__)
-wake_re = re.compile(WAKE_WORD_REGEX, re.IGNORECASE)
-
-
-@dataclass
-class MonitorInfo:
-    state: str
-    recorded: np.array
-    last_recognized: str
 
 
 class WakeMonitor:
@@ -57,7 +48,7 @@ class WakeMonitor:
             self.last_recognized = stt_result.result if not stt_result.is_probably_hallucination else ''
 
         if self.state == "IDLE":
-            if re.search(wake_re, self.last_recognized):
+            if re.search(WAKE_RE, self.last_recognized):
                 self._start_recording()
 
         elif self.state == "RECORDING":
