@@ -41,7 +41,7 @@ class STTRecognizer:
         transcribed = ' '.join(map(lambda x: x.text, segments))
         is_probably_hallucination = self._is_probably_hallucination(transcribed)
 
-        logger.info(f"WhisperRecognizer [{self.model_name}]: recognized '{transcribed}'")
+        logger.debug(f"WhisperRecognizer [{self.model_name}]: recognized '{transcribed}'")
         return STTResult(transcribed, is_probably_hallucination)
 
     @staticmethod

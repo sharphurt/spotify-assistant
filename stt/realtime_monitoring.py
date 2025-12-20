@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from time import time as current_time, sleep
 from collections import deque
@@ -9,6 +10,7 @@ from stt.vad import SileroVAD
 
 from config import *
 
+logger = logging.getLogger(__name__)
 wake_re = re.compile(WAKE_WORD_REGEX, re.IGNORECASE)
 
 
@@ -60,21 +62,23 @@ class WakeMonitor:
 
         elif self.state == "RECORDING":
             if current_time() - self.recording_start_time > COMMAND_TIMEOUT:
-                print("Finish recording by timeout")
+                logger.info("Finish recording by timeout")
                 self._stop_recording()
-                return MonitorInfo(state=self.state, recorded=np.array(self.record_buffer, dtype=np.float32),
-                                   last_recognized=self.last_recognized)
+                raw_audio = np.array(self.record_buffer, dtype=np.float32)
+                normalized = self._normalize_audio(raw_audio)
+                return MonitorInfo(state=self.state, recorded=normalized, last_recognized=self.last_recognized)
 
             if current_time() - self.last_speech_time > SILENCE_TIMEOUT:
-                print('Finish recording by silence')
+                logger.info('Finish recording by silence')
                 self._stop_recording()
-                return MonitorInfo(state=self.state, recorded=np.array(self.record_buffer, dtype=np.float32),
-                                   last_recognized=self.last_recognized)
+                raw_audio = np.array(self.record_buffer, dtype=np.float32)
+                normalized = self._normalize_audio(raw_audio)
+                return MonitorInfo(state=self.state, recorded=normalized, last_recognized=self.last_recognized)
 
         return MonitorInfo(state=self.state, recorded=None, last_recognized=self.last_recognized)
 
     def _start_recording(self):
-        print('RECORDING')
+        logger.info('RECORDING')
         self.state = "RECORDING"
         self.is_recording = True
         self.recording_start_time = current_time()
@@ -89,6 +93,15 @@ class WakeMonitor:
         self.realtime_buffer.clear()
 
     def _is_time_to_recognize(self):
-        is_buffer_enough = len(self.realtime_buffer) >= WINDOW
+        is_buffer_enough = len(self.realtime_buffer) >= self.realtime_buffer.maxlen
         is_time_to_listen = current_time() - self.last_transcription_time >= CHECK_WAKE_EVERY_SECONDS
         return is_buffer_enough and is_time_to_listen
+
+    def _normalize_audio(self, audio: np.array):
+        logger.info("Normalizing audio")
+        abs_max = np.max(np.abs(audio))
+
+        if abs_max > 0:
+            return audio / abs_max
+        else:
+            return audio

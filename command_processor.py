@@ -1,16 +1,15 @@
+import logging
 import re
-from string import punctuation
 from typing import Union
 
-import dotenv
 import numpy as np
 from ddgs import DDGS
 
 from config import *
-from gpt.yandex_gpt_client import YandexGptClient
+from gpt.abstract_gpt_client import AbstractGptClient
 from stt.stt_recognizer import STTRecognizer
 
-dotenv.load_dotenv()
+logger = logging.getLogger(__name__)
 
 wake_re = re.compile(WAKE_WORD_REGEX, re.IGNORECASE)
 punctuation_re = re.compile(r'[^\w\s]', re.IGNORECASE)
@@ -21,7 +20,7 @@ duckduckgo_search_url = "https://html.duckduckgo.com/html/?q="
 
 
 class CommandProcessor:
-    def __init__(self, stt: STTRecognizer, gpt: YandexGptClient):
+    def __init__(self, stt: STTRecognizer, gpt: AbstractGptClient):
         self.stt = stt
         self.gpt = gpt
 
@@ -30,7 +29,7 @@ class CommandProcessor:
         if not stt_result.is_probably_hallucination:
             self.parse_command(stt_result.result)
         else:
-            print('Recorded command is probably hallucination, will not be processed')
+            logger.warning('Recorded command is probably hallucination, will not be processed')
             # todo: ask to repeat
 
     def parse_command(self, command):
@@ -38,16 +37,21 @@ class CommandProcessor:
         web_search_result = self.get_web_search_info(sanitized)
         user_request = sanitized + ("\n SEARCH RESULTS:\n" + web_search_result if web_search_result else "")
         response = self.gpt.request_gpt(user_input=user_request, system_prompt=system_prompt)
+        if response is None or response == '':
+            logger.error("Got empty response from GPT")
 
-        print(response)
+        logger.info(response)
 
     def get_web_search_info(self, command):
         try:
             results = DDGS().text(command + " music", safesearch='off', page=1, backend="duckduckgo")
-            return sanitize_text(' '.join(map(lambda r: r['body'], results)))[0:256]
+            sanitized = sanitize_text(' '.join(map(lambda r: r['body'], results)))
+            logger.info(f"Web search results: {sanitized}")
+            return sanitized
         except Exception as e:
-            print(e)
+            logger.error(e)
             return None
+
 
 def sanitize_text(text):
     remove_wake = re.sub(pattern=wake_re, repl="", string=text)
