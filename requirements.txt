@@ -1,6 +1,6 @@
 vosk~=0.3.45
 pyaudio
-dotenv
+dotenv~=0.9.9
 sounddevice~=0.5.3
 setuptools
 webrtcvad~=2.0.10
@@ -11,3 +11,8 @@ transformers~=4.57.3
 torch~=2.5.1+cu121
 sympy~=1.13.1
 silero-vad
+python-dotenv~=1.2.1
+requests~=2.32.5
+openai~=2.13.0
+beautifulsoup4~=4.14.3
+ddgs~=9.10.0

@@ -1,6 +1,6 @@
-/whisper-large-v3-ct2
-/whisper-small
-/whisper-tiny
+/whisper/whisper-large-v3-ct2
+/whisper/whisper-small
+/whisper/whisper-tiny
 
 .venv
 .idea
